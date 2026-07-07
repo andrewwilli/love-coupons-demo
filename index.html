@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Love Coupons">
+  <meta name="theme-color" content="#2a5955">
+  <title>Love Coupons for Ainu</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:       #2a5955;
+      --primary-light: #3a7470;
+      --primary-dark:  #1d3e3b;
+      --gold:          #b8936a;
+      --gold-bg:       #f5ead8;
+      --bg:            #f7f4ef;
+      --card:          #ffffff;
+      --text:          #1a1a1a;
+      --text-muted:    #888;
+      --border:        #e8e1d8;
+      --r:             16px;
+      --r-sm:          8px;
+    }
+
+    html, body {
+      height: 100%; font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg); color: var(--text);
+      -webkit-font-smoothing: antialiased; overflow: hidden;
+    }
+
+    /* ─── QUICK-OPEN SCREEN ──────────────────────────────────── */
+    #quick-open-screen {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--primary);
+      display: none; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 40px;
+    }
+    .quick-logo {
+      width: 90px; height: 90px; border-radius: 22px;
+      object-fit: cover; margin-bottom: 22px;
+      animation: float 3s ease-in-out infinite;
+      -webkit-user-select: none; user-select: none;
+      -webkit-touch-callout: none;
+      cursor: pointer;
+    }
+    .quick-open-btn {
+      margin-top: 44px; padding: 16px 40px;
+      background: white; color: var(--primary);
+      border: none; border-radius: 40px; font-size: 16px;
+      font-family: 'Inter', sans-serif; font-weight: 500;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation; transition: transform 0.1s ease;
+    }
+    .quick-open-btn:active { transform: scale(0.96); }
+
+    /* ─── ADMIN PIN OVERLAY ───────────────────────────────────
+       Shown on long-press when device is already remembered.    */
+    #admin-pin-overlay {
+      position: fixed; inset: 0; z-index: 1100;
+      background: rgba(0,0,0,0.65);
+      display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    #admin-pin-overlay.on { display: flex; }
+    .admin-pin-box {
+      background: var(--primary-dark); border-radius: 24px;
+      padding: 32px 24px 26px; width: 100%; max-width: 300px;
+      display: flex; flex-direction: column; align-items: center;
+    }
+    .admin-pin-label {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.12em; color: rgba(255,255,255,0.5);
+      margin-bottom: 20px;
+    }
+    .admin-pin-cancel {
+      margin-top: 20px; font-size: 13px; color: rgba(255,255,255,0.45);
+      cursor: pointer; padding: 8px; -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ─── PIN SCREEN ─────────────────────────────────────────── */
+    #pin-screen {
+      position: fixed; inset: 0; z-index: 1000;
+      background: var(--primary);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transition: opacity 0.4s ease;
+    }
+    #pin-screen.out { opacity: 0; pointer-events: none; }
+
+    .pin-logo { font-size: 44px; margin-bottom: 20px; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+    .pin-title { font-family: 'Playfair Display', Georgia, serif; font-size: 26px; font-weight: 400; color: white; letter-spacing: 0.02em; margin-bottom: 6px; }
+    .pin-sub { font-size: 13px; font-weight: 300; color: rgba(255,255,255,0.55); margin-bottom: 44px; }
+
+    .pin-dots { display: flex; gap: 14px; margin-bottom: 40px; }
+    .pin-dot { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.35); transition: all 0.18s ease; }
+    .pin-dot.on { background: white; border-color: white; transform: scale(1.15); }
+    .pin-dots.shake { animation: shake 0.38s ease; }
+    @keyframes shake {
+      0%,100% { transform: translateX(0); }
+      20% { transform: translateX(-9px); } 40% { transform: translateX(9px); }
+      60% { transform: translateX(-6px); } 80% { transform: translateX(6px); }
+    }
+
+    .pin-pad { display: grid; grid-template-columns: repeat(3, 72px); gap: 14px; }
+    .pin-btn {
+      width: 72px; height: 72px; border-radius: 50%; border: none;
+      background: rgba(255,255,255,0.1); color: white;
+      font-size: 22px; font-family: 'Inter', sans-serif; font-weight: 400;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: background 0.12s ease;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+    .pin-btn:active { background: rgba(255,255,255,0.24); }
+    .pin-btn.ghost { visibility: hidden; }
+    .pin-error { font-size: 12px; color: rgba(255,180,180,0.9); margin-top: 20px; height: 16px; text-align: center; }
+
+    /* ─── WELCOME SCREEN ─────────────────────────────────────── */
+    #welcome-screen {
+      position: fixed; inset: 0; z-index: 90;
+      background: var(--primary);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 40px;
+      opacity: 0; pointer-events: none; transition: opacity 0.5s ease;
+    }
+    #welcome-screen.on { opacity: 1; pointer-events: all; }
+    .welcome-hearts { font-size: 52px; margin-bottom: 28px; animation: float 3s ease-in-out infinite; }
+    .welcome-title { font-family: 'Playfair Display', serif; font-size: 34px; font-weight: 400; font-style: italic; color: white; margin-bottom: 14px; }
+    .welcome-body { font-size: 15px; font-weight: 300; color: rgba(255,255,255,0.65); line-height: 1.7; margin-bottom: 44px; }
+    .welcome-cta {
+      padding: 14px 36px; background: white; color: var(--primary);
+      border: none; border-radius: 40px; font-size: 15px;
+      font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+      transition: transform 0.1s ease;
+    }
+    .welcome-cta:active { transform: scale(0.96); }
+
+    /* ─── MAIN APP ───────────────────────────────────────────── */
+    #app {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      background: var(--bg); opacity: 0; transition: opacity 0.4s ease; z-index: 20;
+      pointer-events: none;
+    }
+    #app.on { opacity: 1; pointer-events: all; }
+
+    .app-header {
+      background: var(--primary);
+      padding: 14px 20px 18px;
+      padding-top: max(14px, env(safe-area-inset-top));
+      flex-shrink: 0;
+    }
+    .app-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px; }
+    .app-title { font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 600; color: white; }
+    .tc-link { font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.5); text-transform: uppercase; letter-spacing: 0.09em; cursor: pointer; padding: 4px 0 4px 8px; -webkit-tap-highlight-color: transparent; }
+    .app-sub { font-size: 12px; font-weight: 300; color: rgba(255,255,255,0.5); margin-bottom: 10px; }
+
+    .balance-bar {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.12); border-radius: 20px;
+      padding: 7px 14px; width: fit-content;
+    }
+    .balance-label { font-size: 12px; color: rgba(255,255,255,0.6); font-weight: 300; }
+    .balance-num { font-size: 15px; font-weight: 500; color: white; }
+
+    .coupon-list {
+      flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px 16px;
+      padding-bottom: max(24px, env(safe-area-inset-bottom));
+    }
+
+    /* ─── COUPON CARD ────────────────────────────────────────── */
+    .coupon-card {
+      background: var(--card); border-radius: var(--r); margin-bottom: 10px;
+      overflow: hidden; cursor: pointer;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.04);
+      transition: transform 0.13s ease;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+    .coupon-card:active { transform: scale(0.975); }
+    .coupon-card.locked { opacity: 0.6; }
+    .coupon-card.redeemed { opacity: 0.55; }
+    .card-bar { height: 3px; background: var(--primary); }
+    .coupon-card.locked .card-bar { background: #ccc; }
+    .coupon-card.redeemed .card-bar { background: #b8a898; }
+    .card-inner { padding: 14px 15px 13px; display: flex; gap: 13px; align-items: flex-start; }
+    .card-emoji { font-size: 27px; flex-shrink: 0; margin-top: 1px; }
+    .card-body { flex: 1; min-width: 0; }
+    .card-title { font-family: 'Playfair Display', serif; font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.3; margin-bottom: 3px; }
+    .card-teaser { font-size: 12px; color: var(--text-muted); font-weight: 300; line-height: 1.4; }
+    .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; flex-wrap: wrap; gap: 6px; }
+
+    .kiss-pill { display: inline-flex; align-items: center; gap: 4px; background: var(--gold-bg); color: #8a6235; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .kiss-pill.cant { background: #f5e8e8; color: #b05050; }
+    .card-tags { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+    .redeemed-tag { font-size: 10px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.07em; color: var(--primary); }
+    .countdown-tag { font-size: 10px; font-weight: 500; background: rgba(42,89,85,0.1); color: var(--primary); padding: 3px 8px; border-radius: 10px; }
+    .countdown-tag.today { background: rgba(184,147,106,0.18); color: #8a6235; }
+    .countdown-tag.past { background: #f5e8e8; color: #b05050; }
+
+    /* ─── MODAL ──────────────────────────────────────────────── */
+    #overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.38); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.28s ease; }
+    #overlay.on { opacity: 1; pointer-events: all; }
+    #modal { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-radius: 22px 22px 0 0; z-index: 201; transform: translateY(100%); transition: transform 0.34s cubic-bezier(0.32, 0.72, 0, 1); max-height: 92vh; display: flex; flex-direction: column; }
+    #modal.on { transform: translateY(0); }
+    .modal-grip { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 11px auto 0; flex-shrink: 0; }
+    .modal-body { overflow-y: auto; -webkit-overflow-scrolling: touch; flex: 1; padding: 18px 22px; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+
+    .modal-head { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 14px; }
+    .modal-emoji { font-size: 34px; flex-shrink: 0; }
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 21px; font-weight: 600; line-height: 1.25; color: var(--text); }
+    .modal-kisses { display: inline-flex; align-items: center; gap: 5px; background: var(--gold-bg); color: #8a6235; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; margin-bottom: 14px; }
+    .modal-desc { font-size: 14px; line-height: 1.7; color: #484848; font-weight: 300; margin-bottom: 10px; }
+    .modal-note { font-size: 13px; color: var(--text-muted); font-style: italic; background: var(--bg); border-radius: var(--r-sm); padding: 11px 13px; line-height: 1.55; margin-bottom: 18px; }
+
+    .section-divider { height: 1px; background: var(--border); margin: 16px 0; }
+    .section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); margin-bottom: 10px; display: block; }
+    .input-group { margin-bottom: 18px; }
+
+    .pill-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill { padding: 8px 14px; border-radius: 20px; border: 1.5px solid var(--border); font-size: 13px; color: var(--text); cursor: pointer; user-select: none; transition: all 0.16s ease; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .pill.on { background: var(--primary); border-color: var(--primary); color: white; }
+
+    .field-input { width: 100%; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: var(--r-sm); font-size: 14px; font-family: 'Inter', sans-serif; color: var(--text); background: white; outline: none; transition: border-color 0.18s ease; -webkit-appearance: none; appearance: none; }
+    .field-input:focus { border-color: var(--primary); }
+
+    .redeem-btn { width: 100%; padding: 15px; margin-top: 4px; background: var(--primary); color: white; border: none; border-radius: var(--r); font-size: 15px; font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; letter-spacing: 0.02em; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: background 0.15s ease, transform 0.1s ease; }
+    .redeem-btn:active { transform: scale(0.97); background: var(--primary-dark); }
+    .redeem-btn.cant-afford { background: #e8e1d8; color: var(--text-muted); }
+    .redeem-btn.already-used { background: var(--bg); color: var(--text-muted); border: 1.5px solid var(--border); cursor: default; pointer-events: none; }
+    .cant-afford-note { text-align: center; font-size: 12px; color: #b05050; margin-top: 8px; }
+    .redeemed-summary { background: var(--bg); border-radius: var(--r-sm); padding: 12px 14px; margin-top: 10px; }
+    .redeemed-summary-date { font-size: 12px; color: var(--text-muted); margin-bottom: 3px; }
+    .redeemed-summary-detail { font-size: 13px; color: var(--primary); font-weight: 400; line-height: 1.4; }
+    .reset-hint { text-align: center; margin-top: 8px; font-size: 11px; color: var(--border); cursor: pointer; padding: 4px; -webkit-tap-highlight-color: transparent; }
+    .pill.frozen { pointer-events: none; opacity: 0.7; }
+    .field-input.frozen { pointer-events: none; background: var(--bg); color: var(--text-muted); }
+
+    .history-list { margin-top: 4px; }
+    .history-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); gap: 10px; }
+    .history-item:last-child { border-bottom: none; }
+    .history-date { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+    .history-detail { font-size: 12px; color: var(--text); flex: 1; text-align: right; line-height: 1.4; }
+
+    /* ─── CONFIRM ────────────────────────────────────────────── */
+    #confirm { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; display: flex; align-items: center; justify-content: center; padding: 24px; opacity: 0; pointer-events: none; transition: opacity 0.2s ease; }
+    #confirm.on { opacity: 1; pointer-events: all; }
+    .confirm-box { background: white; border-radius: var(--r); padding: 28px 22px; text-align: center; width: 100%; transform: scale(0.88); transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1); }
+    #confirm.on .confirm-box { transform: scale(1); }
+    .confirm-emoji { font-size: 46px; margin-bottom: 14px; }
+    .confirm-title { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 600; margin-bottom: 8px; }
+    .confirm-body { font-size: 13px; color: var(--text-muted); line-height: 1.55; margin-bottom: 22px; }
+    .confirm-actions { display: flex; gap: 10px; }
+    .btn-no { flex: 1; padding: 13px; border: 1.5px solid var(--border); border-radius: var(--r-sm); background: transparent; color: var(--text-muted); font-size: 14px; font-family: 'Inter', sans-serif; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .btn-yes { flex: 1; padding: 13px; border: none; border-radius: var(--r-sm); background: var(--primary); color: white; font-size: 14px; font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+    /* ─── SUCCESS ────────────────────────────────────────────── */
+    #success { position: fixed; inset: 0; background: var(--primary); z-index: 400; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+    #success.on { opacity: 1; pointer-events: all; }
+    .success-icon { font-size: 60px; margin-bottom: 22px; animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.05s both; }
+    /* ─── HEARTS CANVAS ──────────────────────────────────────── */
+    #hearts-canvas { position: fixed; inset: 0; z-index: 401; pointer-events: none; }
+    @keyframes pop { from { transform: scale(0); } to { transform: scale(1); } }
+    .success-title { font-family: 'Playfair Display', serif; font-size: 27px; font-weight: 600; color: white; margin-bottom: 10px; }
+    .success-body { font-size: 15px; color: rgba(255,255,255,0.65); font-weight: 300; line-height: 1.6; }
+    .success-balance { margin-top: 20px; font-size: 13px; color: rgba(255,255,255,0.45); }
+
+    /* ─── TERMS ──────────────────────────────────────────────── */
+    #tc-screen { position: fixed; inset: 0; background: var(--bg); z-index: 50; transform: translateX(100%); transition: transform 0.3s ease; display: flex; flex-direction: column; }
+    #tc-screen.on { transform: translateX(0); }
+    .tc-header { background: var(--primary); padding: 16px 20px; padding-top: max(16px, env(safe-area-inset-top)); display: flex; align-items: center; gap: 14px; }
+    .tc-back { color: rgba(255,255,255,0.7); font-size: 14px; cursor: pointer; padding: 4px 4px 4px 0; -webkit-tap-highlight-color: transparent; }
+    .tc-header-title { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 400; color: white; }
+    .tc-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 26px 20px; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+    .tc-item { display: flex; gap: 14px; margin-bottom: 22px; }
+    .tc-num { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 600; color: var(--primary); flex-shrink: 0; width: 22px; }
+    .tc-text { font-size: 14px; line-height: 1.7; color: #484848; font-weight: 300; }
+    .tc-footer { text-align: center; padding: 8px 20px 4px; font-size: 12px; color: var(--text-muted); font-style: italic; line-height: 1.6; }
+
+    /* ─── ADMIN PANEL ────────────────────────────────────────── */
+    #admin-panel { position: fixed; inset: 0; z-index: 500; display: flex; flex-direction: column; background: var(--bg); opacity: 0; pointer-events: none; transition: opacity 0.4s ease; }
+    #admin-panel.on { opacity: 1; pointer-events: all; }
+
+    .admin-header { background: var(--primary-dark); padding: 14px 20px 16px; padding-top: max(14px, env(safe-area-inset-top)); flex-shrink: 0; }
+    .admin-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+    .admin-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 600; color: white; }
+    .admin-badge { font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.8); padding: 3px 8px; border-radius: 10px; }
+    .admin-sub { font-size: 11px; color: rgba(255,255,255,0.45); font-weight: 300; }
+
+    .admin-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 18px 16px; padding-bottom: max(28px, env(safe-area-inset-bottom)); }
+
+    .admin-section { background: var(--card); border-radius: var(--r); padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); }
+    .admin-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); margin-bottom: 14px; }
+
+    .balance-big { text-align: center; margin-bottom: 18px; }
+    .balance-big-num { font-family: 'Playfair Display', serif; font-size: 52px; font-weight: 600; color: var(--primary); line-height: 1; }
+    .balance-big-label { font-size: 13px; color: var(--text-muted); font-weight: 300; margin-top: 4px; }
+
+    .add-kisses-form { display: flex; flex-direction: column; gap: 10px; }
+    .add-kisses-row { display: flex; gap: 10px; }
+    .num-input { flex: 1; padding: 11px 13px; border: 1.5px solid var(--border); border-radius: var(--r-sm); font-size: 16px; font-family: 'Inter', sans-serif; color: var(--text); background: white; outline: none; transition: border-color 0.18s ease; -webkit-appearance: none; text-align: center; }
+    .num-input:focus { border-color: var(--primary); }
+    .add-btn { padding: 11px 20px; background: var(--primary); color: white; border: none; border-radius: var(--r-sm); font-size: 14px; font-family: 'Inter', sans-serif; font-weight: 500; cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+    .note-input { width: 100%; padding: 10px 13px; border: 1.5px solid var(--border); border-radius: var(--r-sm); font-size: 13px; font-family: 'Inter', sans-serif; color: var(--text); background: white; outline: none; transition: border-color 0.18s ease; }
+    .note-input:focus { border-color: var(--primary); }
+    .note-input::placeholder { color: var(--text-muted); }
+
+    .admin-coupon { padding: 12px 0; border-bottom: 1px solid var(--border); }
+    .admin-coupon:last-child { border-bottom: none; }
+    .admin-coupon-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+    .admin-coupon-name { font-size: 14px; font-weight: 500; color: var(--text); flex: 1; }
+    .admin-coupon-cost { font-size: 12px; color: var(--text-muted); flex-shrink: 0; }
+    .reset-btn { font-size: 11px; color: #b05050; background: #f5e8e8; border: none; border-radius: 10px; padding: 4px 10px; cursor: pointer; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; touch-action: manipulation; flex-shrink: 0; }
+    .admin-coupon-detail { font-size: 12px; color: var(--text-muted); font-weight: 300; }
+
+    .log-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+    .log-item:last-child { border-bottom: none; }
+    .log-sign { font-size: 13px; font-weight: 600; flex-shrink: 0; width: 36px; text-align: right; }
+    .log-sign.plus { color: var(--primary); }
+    .log-sign.minus { color: #b05050; }
+    .log-detail { flex: 1; }
+    .log-desc { font-size: 13px; color: var(--text); }
+    .log-date { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .log-empty { font-size: 13px; color: var(--text-muted); font-style: italic; text-align: center; padding: 10px 0; }
+
+    .switch-view-btn { width: 100%; padding: 14px; background: transparent; border: 1.5px solid var(--border); border-radius: var(--r); color: var(--primary); font-size: 14px; font-family: 'Inter', sans-serif; cursor: pointer; margin-bottom: 14px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+
+    /* ─── INSTALL HINT ───────────────────────────────────────── */
+    #install-hint { position: fixed; bottom: 0; left: 0; right: 0; background: var(--primary-dark); color: white; padding: 14px 20px; padding-bottom: max(14px, env(safe-area-inset-bottom)); z-index: 600; display: flex; align-items: center; justify-content: space-between; gap: 12px; transform: translateY(100%); transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1); }
+    #install-hint.on { transform: translateY(0); }
+    .hint-text { font-size: 13px; font-weight: 300; line-height: 1.45; flex: 1; }
+    .hint-text strong { font-weight: 500; }
+    .hint-close { font-size: 20px; cursor: pointer; opacity: 0.6; padding: 4px; -webkit-tap-highlight-color: transparent; }
+
+    /* ─── LOADING OVERLAY ───────────────────────────────────────── */
+    #loading {
+      display: none; position: fixed; inset: 0; z-index: 2000;
+      background: var(--primary); flex-direction: column;
+      align-items: center; justify-content: center;
+    }
+    .loading-heart { font-size: 40px; animation: float 1.5s ease-in-out infinite; }
+    .loading-text  { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 12px; font-weight: 300; }
+
+    /* ─── COUPON TIERS ───────────────────────────────────────────
+       Tier 1: ≤10 kisses — Sweet   (teal, current)
+       Tier 2: 11–20 kisses — Romantic (rose-pink)
+       Tier 3: 21+ kisses  — Spicy    (deep red)
+    ──────────────────────────────────────────────────────────── */
+    .tier-1 .card-bar { background: linear-gradient(90deg,#2a5955,#4a8878); height:3px; }
+    .tier-1 .kiss-pill { background:var(--gold-bg); color:#8a6235; }
+
+    .tier-2 { box-shadow:0 1px 8px rgba(175,60,110,.12),0 4px 16px rgba(0,0,0,.05); }
+    .tier-2 .card-bar { background:linear-gradient(90deg,#b54070,#d46094); height:4px; }
+    .tier-2 .kiss-pill { background:#fce8f2; color:#8a1a55; }
+    .tier-2 .card-title { color:#3a0820; }
+    .tier-2 .kiss-pill.cant { background:#f5e0ec; color:#8a1a55; }
+
+    .tier-3 { box-shadow:0 2px 12px rgba(175,20,45,.18),0 6px 24px rgba(0,0,0,.07); }
+    .tier-3 .card-bar { background:linear-gradient(90deg,#8a1020,#c42040); height:5px; }
+    .tier-3 .kiss-pill { background:#fde8ea; color:#7a0a1c; }
+    .tier-3 .card-title { color:#2a0008; }
+    .tier-3 .kiss-pill.cant { background:#f5e0e2; color:#7a0a1c; }
+
+    .tier-tag { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:600;
+                letter-spacing:.05em; padding:3px 8px; border-radius:10px; }
+    .tier-2 .tier-tag { background:#fce8f2; color:#8a1a55; }
+    .tier-3 .tier-tag { background:#fde8ea; color:#7a0a1c; }
+
+    /* ─── SUGGEST BUTTON ─────────────────────────────────────── */
+    .suggest-wrap { padding:4px 0 28px; text-align:center; }
+    .suggest-btn  { background:transparent; border:1.5px dashed var(--border);
+                    border-radius:var(--r); color:var(--text-muted); font-size:13px;
+                    font-family:'Inter',sans-serif; padding:13px 20px; width:100%;
+                    cursor:pointer; -webkit-tap-highlight-color:transparent;
+                    touch-action:manipulation; transition:background .15s ease; }
+    .suggest-btn:active { background:var(--bg); }
+
+    /* ─── SUGGEST MODAL ──────────────────────────────────────── */
+    #suggest-overlay { position:fixed; inset:0; background:rgba(0,0,0,.38); z-index:220;
+                       opacity:0; pointer-events:none; transition:opacity .28s ease; }
+    #suggest-overlay.on { opacity:1; pointer-events:all; }
+    #suggest-modal { position:fixed; bottom:0; left:0; right:0; background:var(--card);
+                     border-radius:22px 22px 0 0; z-index:221; transform:translateY(100%);
+                     transition:transform .34s cubic-bezier(.32,.72,0,1); }
+    #suggest-modal.on { transform:translateY(0); }
+
+    /* ─── COUPON EDITOR (admin) ──────────────────────────────── */
+    #coupon-editor { position:fixed; inset:0; z-index:550; background:var(--bg);
+                     opacity:0; pointer-events:none; transition:opacity .3s ease;
+                     display:flex; flex-direction:column; }
+    #coupon-editor.on { opacity:1; pointer-events:all; }
+    .editor-header { background:var(--primary-dark); padding:14px 20px 16px;
+                     padding-top:max(14px,env(safe-area-inset-top)); flex-shrink:0;
+                     display:flex; align-items:center; gap:14px; }
+    .editor-back { color:rgba(255,255,255,.7); font-size:22px; cursor:pointer;
+                   padding:4px 8px 4px 0; -webkit-tap-highlight-color:transparent; line-height:1; }
+    .editor-header-title { font-family:'Playfair Display',serif; font-size:19px;
+                           font-weight:400; color:white; flex:1; }
+    .editor-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;
+                     padding:20px 16px; padding-bottom:max(36px,env(safe-area-inset-bottom)); }
+    .editor-field  { margin-bottom:16px; }
+    .editor-label  { font-size:11px; font-weight:600; text-transform:uppercase;
+                     letter-spacing:.1em; color:var(--primary); margin-bottom:6px; display:block; }
+    .editor-emoji-row { display:flex; gap:10px; }
+    .editor-emoji-input { width:70px; text-align:center; font-size:22px; }
+    .editor-input-row { background:var(--bg); border-radius:var(--r-sm); padding:12px; margin-bottom:10px; }
+    .add-input-row { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .add-input-btn { padding:6px 12px; background:rgba(42,89,85,.1); color:var(--primary);
+                     border:none; border-radius:10px; font-size:12px; font-family:'Inter',sans-serif;
+                     cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .editor-save-btn { width:100%; padding:15px; background:var(--primary); color:white; border:none;
+                       border-radius:var(--r); font-size:15px; font-family:'Inter',sans-serif;
+                       font-weight:500; cursor:pointer; margin-top:8px; }
+    .editor-delete-btn { width:100%; padding:13px; background:transparent;
+                         border:1.5px solid #e8d8d8; color:#b05050; border-radius:var(--r);
+                         font-size:14px; font-family:'Inter',sans-serif; cursor:pointer; margin-top:10px; }
+
+    /* ─── PENDING SUGGESTIONS (admin) ───────────────────────── */
+    .suggestion-card { background:var(--card); border-radius:var(--r); padding:14px 16px;
+                       margin-bottom:10px; border-left:3px solid var(--gold); }
+    .suggestion-head { display:flex; align-items:flex-start; gap:10px; margin-bottom:8px; }
+    .suggestion-emoji { font-size:24px; flex-shrink:0; }
+    .suggestion-title { font-size:14px; font-weight:500; color:var(--text); flex:1; }
+    .suggestion-desc  { font-size:12px; color:var(--text-muted); margin-bottom:12px; line-height:1.5; }
+    .suggestion-actions { display:flex; gap:8px; }
+    .approve-btn { flex:1; padding:9px; background:var(--primary); color:white; border:none;
+                   border-radius:var(--r-sm); font-size:13px; font-family:'Inter',sans-serif;
+                   font-weight:500; cursor:pointer; -webkit-tap-highlight-color:transparent; }
+    .reject-btn  { padding:9px 16px; background:#f5e8e8; color:#b05050; border:none;
+                   border-radius:var(--r-sm); font-size:13px; font-family:'Inter',sans-serif;
+                   cursor:pointer; -webkit-tap-highlight-color:transparent; }
+
+    /* ─── ADMIN COUPON EDIT BTN ──────────────────────────────── */
+    .edit-btn { font-size:11px; color:var(--primary); background:rgba(42,89,85,.1); border:none;
+                border-radius:10px; padding:4px 10px; cursor:pointer; font-family:'Inter',sans-serif;
+                -webkit-tap-highlight-color:transparent; flex-shrink:0; }
+    .new-coupon-btn { width:100%; padding:12px; background:transparent;
+                      border:1.5px dashed rgba(42,89,85,.35); border-radius:var(--r-sm);
+                      color:var(--primary); font-size:13px; font-family:'Inter',sans-serif;
+                      cursor:pointer; margin-top:10px; -webkit-tap-highlight-color:transparent; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</head>
+<body>
+
+<!-- LOADING OVERLAY -->
+<div id="loading">
+  <div class="loading-heart">💌</div>
+  <div class="loading-text">Loading…</div>
+</div>
+
+<!-- QUICK-OPEN SCREEN (shown when device is already remembered) -->
+<div id="quick-open-screen">
+  <img class="quick-logo" src="icon-180.png" alt="Love Coupons"
+    onmousedown="startAdminLongPress()" onmouseup="cancelAdminLongPress()" onmouseleave="cancelAdminLongPress()"
+    ontouchstart="startAdminLongPress(event)" ontouchend="cancelAdminLongPress()" ontouchmove="cancelAdminLongPress()"
+    oncontextmenu="return false">
+  <div class="pin-title">Love Coupons</div>
+  <div class="pin-sub">for Ainu, with love ♡</div>
+  <button class="quick-open-btn" onclick="enterUserModeQuick()">Open my coupons ♡</button>
+</div>
+
+<!-- ADMIN PIN OVERLAY (long-press triggered from quick-open screen) -->
+<div id="admin-pin-overlay">
+  <div class="admin-pin-box">
+    <div class="admin-pin-label">Admin access</div>
+    <div class="pin-dots" id="admin-pin-dots">
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+      <div class="pin-dot"></div><div class="pin-dot"></div>
+    </div>
+    <div style="margin-top:28px;">
+      <div class="pin-pad">
+        <button class="pin-btn" onclick="adminPinKey('1')">1</button>
+        <button class="pin-btn" onclick="adminPinKey('2')">2</button>
+        <button class="pin-btn" onclick="adminPinKey('3')">3</button>
+        <button class="pin-btn" onclick="adminPinKey('4')">4</button>
+        <button class="pin-btn" onclick="adminPinKey('5')">5</button>
+        <button class="pin-btn" onclick="adminPinKey('6')">6</button>
+        <button class="pin-btn" onclick="adminPinKey('7')">7</button>
+        <button class="pin-btn" onclick="adminPinKey('8')">8</button>
+        <button class="pin-btn" onclick="adminPinKey('9')">9</button>
+        <button class="pin-btn ghost"></button>
+        <button class="pin-btn" onclick="adminPinKey('0')">0</button>
+        <button class="pin-btn" onclick="adminPinDel()">⌫</button>
+      </div>
+    </div>
+    <div class="pin-error" id="admin-pin-error"></div>
+    <div class="admin-pin-cancel" onclick="hideAdminPinOverlay()">Cancel</div>
+  </div>
+</div>
+
+<!-- PIN SCREEN -->
+<div id="pin-screen">
+  <div class="pin-logo">💌</div>
+  <div class="pin-title">Love Coupons</div>
+  <div class="pin-sub">for Ainu, with love ♡</div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+    <div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-btn" onclick="pinKey('1')">1</button>
+    <button class="pin-btn" onclick="pinKey('2')">2</button>
+    <button class="pin-btn" onclick="pinKey('3')">3</button>
+    <button class="pin-btn" onclick="pinKey('4')">4</button>
+    <button class="pin-btn" onclick="pinKey('5')">5</button>
+    <button class="pin-btn" onclick="pinKey('6')">6</button>
+    <button class="pin-btn" onclick="pinKey('7')">7</button>
+    <button class="pin-btn" onclick="pinKey('8')">8</button>
+    <button class="pin-btn" onclick="pinKey('9')">9</button>
+    <button class="pin-btn ghost"></button>
+    <button class="pin-btn" onclick="pinKey('0')">0</button>
+    <button class="pin-btn" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+</div>
+
+<!-- WELCOME SCREEN -->
+<div id="welcome-screen">
+  <div class="welcome-hearts">💝</div>
+  <div class="welcome-title">Hello, Ainu</div>
+  <div class="welcome-body">
+    Andrew made something just for you.<br>
+    These love coupons are yours to keep<br>and redeem whenever you like.
+  </div>
+  <button class="welcome-cta" onclick="showHome()">Open my coupons &rarr;</button>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="app-header">
+    <div class="app-header-row">
+      <div class="app-title">Love Coupons</div>
+      <span class="tc-link" onclick="showTC()">T &amp; C</span>
+    </div>
+    <div class="app-sub">for Ainu, with love from Andrew ♡</div>
+    <div class="balance-bar">
+      <span class="balance-label">Kiss balance</span>
+      <span class="balance-num" id="balance-display">💋 0</span>
+    </div>
+  </div>
+  <div class="coupon-list" id="coupon-list"></div>
+</div>
+
+<!-- TERMS SCREEN -->
+<div id="tc-screen">
+  <div class="tc-header">
+    <span class="tc-back" onclick="hideTC()">← Back</span>
+    <div class="tc-header-title">Terms &amp; Conditions</div>
+  </div>
+  <div class="tc-scroll" id="tc-content"></div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+  <div class="admin-header">
+    <div class="admin-header-row">
+      <div class="admin-title">Love Coupons</div>
+      <span class="admin-badge">Admin</span>
+    </div>
+    <div class="admin-sub">Manage Ainu's coupon collection</div>
+  </div>
+  <div class="admin-scroll" id="admin-scroll"></div>
+</div>
+
+<!-- MODAL OVERLAY -->
+<div id="overlay" onclick="closeModal()"></div>
+
+<!-- COUPON MODAL -->
+<div id="modal">
+  <div class="modal-grip"></div>
+  <div class="modal-body" id="modal-body"></div>
+</div>
+
+<!-- CONFIRM DIALOG -->
+<div id="confirm">
+  <div class="confirm-box">
+    <div class="confirm-emoji">💋</div>
+    <div class="confirm-title">Redeem this coupon?</div>
+    <div class="confirm-body" id="confirm-body"></div>
+    <div class="confirm-actions">
+      <button class="btn-no" onclick="closeConfirm()">Not yet</button>
+      <button class="btn-yes" onclick="doRedeem()">Yes, redeem!</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUCCESS FLASH -->
+<div id="success">
+  <div class="success-icon">🎉</div>
+  <div class="success-title">Coupon Redeemed!</div>
+  <div class="success-body" id="success-body"></div>
+  <div class="success-balance" id="success-balance"></div>
+</div>
+
+<!-- HEARTS CANVAS -->
+<canvas id="hearts-canvas"></canvas>
+
+<!-- INSTALL HINT -->
+<div id="install-hint">
+  <div class="hint-text">
+    <strong>Save as app:</strong> tap Share in Safari → "Add to Home Screen"
+  </div>
+  <div class="hint-close" onclick="dismissHint()">✕</div>
+</div>
+
+<!-- SUGGEST OVERLAY + MODAL -->
+<div id="suggest-overlay" onclick="closeSuggestForm()"></div>
+<div id="suggest-modal">
+  <div class="modal-grip"></div>
+  <div class="modal-body">
+    <div style="font-family:'Playfair Display',serif;font-size:20px;font-weight:600;margin-bottom:4px;">Got a coupon idea? 💡</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;font-weight:300;">Andrew will set the kiss cost and add it if he loves it.</div>
+    <div class="input-group">
+      <span class="section-label">Emoji</span>
+      <input type="text" id="suggest-emoji" class="field-input editor-emoji-input" value="💋" maxlength="4">
+    </div>
+    <div class="input-group">
+      <span class="section-label">Title</span>
+      <input type="text" id="suggest-title" class="field-input" placeholder="What should the coupon be called?">
+    </div>
+    <div class="input-group">
+      <span class="section-label">Description</span>
+      <textarea id="suggest-desc" class="field-input" rows="3" style="resize:none;" placeholder="What happens when you redeem it?"></textarea>
+    </div>
+    <button class="redeem-btn" onclick="submitSuggestion()">Send idea to Andrew 💌</button>
+    <div style="text-align:center;margin-top:12px;">
+      <span style="font-size:12px;color:var(--text-muted);cursor:pointer;padding:8px;" onclick="closeSuggestForm()">Cancel</span>
+    </div>
+  </div>
+</div>
+
+<!-- COUPON EDITOR (admin) -->
+<div id="coupon-editor">
+  <div class="editor-header">
+    <span class="editor-back" onclick="closeCouponEditor()">←</span>
+    <div class="editor-header-title" id="editor-title">New Coupon</div>
+  </div>
+  <div class="editor-scroll">
+    <div class="editor-field editor-emoji-row">
+      <div style="flex:0 0 auto;">
+        <span class="editor-label">Emoji</span>
+        <input type="text" id="editor-emoji" class="field-input editor-emoji-input" maxlength="4">
+      </div>
+      <div style="flex:1;">
+        <span class="editor-label">Title</span>
+        <input type="text" id="editor-name" class="field-input" placeholder="Coupon name…">
+      </div>
+    </div>
+    <div class="editor-field">
+      <span class="editor-label">Kisses cost</span>
+      <input type="number" id="editor-kisses" class="field-input" placeholder="e.g. 7" min="1" max="999">
+    </div>
+    <div class="editor-field">
+      <span class="editor-label">Teaser (short preview)</span>
+      <input type="text" id="editor-teaser" class="field-input" placeholder="One-liner shown on the card…">
+    </div>
+    <div class="editor-field">
+      <span class="editor-label">Description</span>
+      <textarea id="editor-desc" class="field-input" rows="4" style="resize:none;" placeholder="Full description shown in the modal…"></textarea>
+    </div>
+    <div class="editor-field">
+      <span class="editor-label">Note (optional)</span>
+      <input type="text" id="editor-note" class="field-input" placeholder="Extra note shown in italic box…">
+    </div>
+
+    <div class="editor-field">
+      <span class="editor-label">Custom Options / Inputs</span>
+      <div id="editor-inputs-list"></div>
+      <div class="add-input-row">
+        <button class="add-input-btn" onclick="addEditorInput('pills')">+ Pill choices</button>
+        <button class="add-input-btn" onclick="addEditorInput('date')">+ Date picker</button>
+        <button class="add-input-btn" onclick="addEditorInput('toggle')">+ Toggle</button>
+        <button class="add-input-btn" onclick="addEditorInput('text')">+ Text field</button>
+      </div>
+    </div>
+
+    <button class="editor-save-btn" onclick="saveCouponFromEditor()">Save Coupon</button>
+    <button class="editor-delete-btn" id="editor-delete-btn" onclick="deleteCouponFromEditor()" style="display:none;">Delete Coupon</button>
+    <div style="height:20px;"></div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+/* ═══════════════════════════════════════════════════
+   CONFIGURATION  ← change ADMIN_PIN to something
+   only Andrew knows before going live!
+   ═══════════════════════════════════════════════════ */
+const USER_PIN  = '121222';   // Ainu's PIN
+const ADMIN_PIN = '195642';   // Andrew's admin PIN
+
+/* ═══════════════════════════════════════════════════
+   COUPON DATA  — loaded from Supabase at startup
+   Coupons live in the `coupons` table (see schema.sql).
+   STATE.coupons is populated in loadFromSupabase().
+   ═══════════════════════════════════════════════════ */
+
+const TC_ITEMS = [
+  'Must be redeemed with kisses (number of kisses written on the coupon — or ask your lovely boyfriend).',
+  'No combining coupons unless you are very cute.',
+  'No cash value, no refunds (but endless kisses are accepted as currency).',
+  'Expires: never.',
+  'Management (me) reserves the right to add bonus cuddles, extra kisses, bonus compliments or sudden bursts of LOVE at no extra charge.',
+  'Void during NFL, hangry moments or die-guet-alt-ÖV-Verspätig.',
+  'Your queen status is permanent — the crown from the first Love Box is still valid ♡'
+];
+
+/* ═══════════════════════════════════════════════════
+   SUPABASE CONFIGURATION
+   Replace the two placeholder strings below with your
+   project URL and anon key from:
+   Supabase Dashboard → Project Settings → API
+   ═══════════════════════════════════════════════════ */
+// ⚠️ DEMO PROJECT — fill these in from your NEW, SEPARATE Supabase project
+// (Dashboard → Project Settings → API). Do NOT reuse the private project's values.
+const SUPABASE_URL      = 'https://uotgbwfrxmjonkvjrlkg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVvdGdid2ZyeG1qb25rdmpybGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM0NTA4NDcsImV4cCI6MjA5OTAyNjg0N30.JgJ-4sdZKlFJ-72mcMxNI9579KHMwK_q3s1eE2qyBBE';
+
+const _supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ═══════════════════════════════════════════════════
+   STORAGE
+   In-memory STATE is loaded from Supabase at startup
+   and kept in sync on every write. Getters are sync
+   (reads from STATE); setters are async (write to
+   both STATE and Supabase).
+   ═══════════════════════════════════════════════════ */
+let STATE = { kisses: 0, inputs: {}, redemptions: {}, log: [], coupons: [], suggestions: [] };
+
+function _mapCoupon(c) {
+  return { ...c, desc: c.description, inputs: c.inputs || [] };
+}
+
+async function loadFromSupabase() {
+  // Kiss balance
+  const { data: st } = await _supabase.from('app_state').select('kisses').eq('id', 1).single();
+  if (st) STATE.kisses = st.kisses;
+
+  // Active coupons (sorted by kisses cost)
+  const { data: coupons } = await _supabase.from('coupons')
+    .select('*').eq('status', 'active').order('kisses');
+  STATE.coupons = (coupons || []).map(_mapCoupon);
+
+  // Saved coupon inputs (draft selections before redemption)
+  const { data: inputs } = await _supabase.from('coupon_inputs').select('coupon_id, inputs');
+  STATE.inputs = {};
+  (inputs || []).forEach(r => { STATE.inputs[r.coupon_id] = r.inputs; });
+
+  // Redemptions
+  const { data: reds } = await _supabase.from('redemptions').select('*').order('ts', { ascending: false });
+  STATE.redemptions = {};
+  (reds || []).forEach(r => {
+    if (!STATE.redemptions[r.coupon_id]) STATE.redemptions[r.coupon_id] = [];
+    STATE.redemptions[r.coupon_id].push({ date: r.redeemed_date, ts: r.ts, inputs: r.inputs });
+  });
+
+  // Activity log
+  const { data: log } = await _supabase.from('activity_log').select('*').order('ts', { ascending: false }).limit(40);
+  STATE.log = (log || []).map(r => ({ type: r.type, amount: r.amount, note: r.note, couponId: r.coupon_id, ts: r.ts }));
+
+  // Realtime: refresh balance + coupons list live
+  _supabase.channel('balance')
+    .on('postgres_changes',
+      { event: 'UPDATE', schema: 'public', table: 'app_state', filter: 'id=eq.1' },
+      payload => {
+        STATE.kisses = payload.new.kisses;
+        updateBalanceDisplay();
+        renderList();
+      })
+    .subscribe();
+
+  _supabase.channel('coupons-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'coupons' }, async () => {
+      const { data: fresh } = await _supabase.from('coupons')
+        .select('*').eq('status', 'active').order('kisses');
+      STATE.coupons = (fresh || []).map(_mapCoupon);
+      renderList();
+    })
+    .subscribe();
+}
+
+async function loadPendingSuggestions() {
+  const { data } = await _supabase.from('coupons')
+    .select('*').eq('status', 'pending').order('created_at');
+  STATE.suggestions = data || [];
+}
+
+// ── Sync getters (read from in-memory STATE) ────────────────────
+function getKisses()              { return STATE.kisses; }
+function getCouponRedemptions(id) { return STATE.redemptions[id] || []; }
+function getSavedInputs(id)       { return STATE.inputs[id] || {}; }
+function getCoupon(id)            { return STATE.coupons.find(x => x.id === id); }
+
+// ── Setters (update STATE immediately, persist to Supabase) ─────
+
+// saveCouponInput is fire-and-forget — UI stays instant
+function saveCouponInput(couponId, inputId, value) {
+  if (!STATE.inputs[couponId]) STATE.inputs[couponId] = {};
+  STATE.inputs[couponId][inputId] = value;
+  _supabase.from('coupon_inputs')
+    .upsert({ coupon_id: couponId, inputs: STATE.inputs[couponId] }, { onConflict: 'coupon_id' })
+    .catch(console.error);
+}
+
+async function creditKisses(amount, note) {
+  const ts = Date.now();
+  const newKisses = (STATE.kisses || 0) + amount;
+  await _supabase.from('app_state').update({ kisses: newKisses }).eq('id', 1);
+  await _supabase.from('activity_log').insert({ type: 'credit', amount, note: note || '', ts });
+  STATE.kisses = newKisses;
+  STATE.log.unshift({ type: 'credit', amount, note: note || '', ts });
+  if (STATE.log.length > 40) STATE.log.length = 40;
+}
+
+async function spendKisses(couponId, kissCost, inputSnapshot) {
+  const ts = Date.now();
+  const date = fmtDate(new Date());
+  const newKisses = Math.max(0, (STATE.kisses || 0) - kissCost);
+  await _supabase.from('app_state').update({ kisses: newKisses }).eq('id', 1);
+  await _supabase.from('redemptions').insert({ coupon_id: couponId, redeemed_date: date, ts, inputs: inputSnapshot });
+  await _supabase.from('activity_log').insert({ type: 'redeem', amount: kissCost, coupon_id: couponId, ts });
+  STATE.kisses = newKisses;
+  if (!STATE.redemptions[couponId]) STATE.redemptions[couponId] = [];
+  STATE.redemptions[couponId].unshift({ date, ts, inputs: inputSnapshot });
+  STATE.log.unshift({ type: 'redeem', amount: kissCost, couponId, ts });
+  if (STATE.log.length > 40) STATE.log.length = 40;
+}
+
+async function resetCouponHistory(couponId) {
+  delete STATE.redemptions[couponId];
+  await _supabase.from('redemptions').delete().eq('coupon_id', couponId);
+}
+
+/* ═══════════════════════════════════════════════════
+   UTILITIES
+   ═══════════════════════════════════════════════════ */
+function fmtDate(d) { return d.toLocaleDateString('en-CH', { day: 'numeric', month: 'long', year: 'numeric' }); }
+function daysUntil(dateStr) {
+  if (!dateStr) return null;
+  const t = new Date(dateStr + 'T00:00:00'), now = new Date();
+  now.setHours(0,0,0,0);
+  return Math.round((t - now) / 86400000);
+}
+function countdownLabel(days) {
+  if (days === null) return null;
+  if (days > 1)  return { text: `in ${days} days 📅`, cls: '' };
+  if (days === 1) return { text: 'tomorrow! 📅', cls: '' };
+  if (days === 0) return { text: 'Today! 🎉', cls: 'today' };
+  return { text: `${Math.abs(days)}d ago`, cls: 'past' };
+}
+function fmtInputSummary(coupon, inputs) {
+  if (!inputs || !coupon) return '';
+  const parts = [];
+  (coupon.inputs || []).forEach(inp => {
+    const v = inputs[inp.id];
+    if (!v || (Array.isArray(v) && !v.length)) return;
+    if (Array.isArray(v)) parts.push(v.join(', '));
+    else if (v === true) parts.push(inp.label);
+    else if (typeof v === 'string' && v.trim()) {
+      if (inp.type === 'date') { try { parts.push(fmtDate(new Date(v + 'T00:00:00'))); } catch { parts.push(v); } }
+      else parts.push(v);
+    }
+  });
+  return parts.join(' · ');
+}
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+/* ═══════════════════════════════════════════════════
+   PIN PAD FACTORY
+   ═══════════════════════════════════════════════════ */
+function makePinPad({ dotsId, errorId, maxLen, onSuccess }) {
+  let val = '';
+  function renderDots() {
+    document.querySelectorAll('#' + dotsId + ' .pin-dot')
+      .forEach((el, i) => el.classList.toggle('on', i < val.length));
+  }
+  function check() {
+    const accepted = onSuccess(val);
+    val = '';
+    if (!accepted) {
+      renderDots();
+      const errEl = document.getElementById(errorId);
+      errEl.textContent = 'Wrong code — try again';
+      const dotsEl = document.getElementById(dotsId);
+      dotsEl.classList.add('shake');
+      setTimeout(() => { dotsEl.classList.remove('shake'); errEl.textContent = ''; }, 400);
+    }
+  }
+  return {
+    key(d) { if (val.length >= maxLen) return; val += d; renderDots(); if (val.length === maxLen) setTimeout(check, 120); },
+    del()  { val = val.slice(0, -1); renderDots(); },
+    reset(){ val = ''; renderDots(); }
+  };
+}
+
+const _userPad = makePinPad({
+  dotsId: 'pin-dots', errorId: 'pin-error', maxLen: 6,
+  onSuccess(val) {
+    if (val === USER_PIN)  { localStorage.setItem('lc_unlocked', '1'); hidePinScreen(); enterUserMode();  return true; }
+    if (val === ADMIN_PIN) { hidePinScreen(); enterAdminMode(); return true; }
+    return false;
+  }
+});
+function pinKey(d) { _userPad.key(d); }
+function pinDel()  { _userPad.del(); }
+
+const _adminPad = makePinPad({
+  dotsId: 'admin-pin-dots', errorId: 'admin-pin-error', maxLen: 6,
+  onSuccess(val) {
+    if (val === ADMIN_PIN) {
+      hideAdminPinOverlay();
+      document.getElementById('quick-open-screen').style.display = 'none';
+      enterAdminMode();
+      return true;
+    }
+    return false;
+  }
+});
+function adminPinKey(d) { _adminPad.key(d); }
+function adminPinDel()  { _adminPad.del(); }
+
+function hidePinScreen() {
+  const ps = document.getElementById('pin-screen');
+  ps.classList.add('out');
+  setTimeout(() => { ps.style.display = 'none'; }, 400);
+}
+
+/* ═══════════════════════════════════════════════════
+   QUICK-OPEN (remembered device)
+   ═══════════════════════════════════════════════════ */
+function enterUserModeQuick() {
+  document.getElementById('quick-open-screen').style.display = 'none';
+  // Welcome screen only once; after that go straight to app
+  if (!localStorage.getItem('lc_seen')) {
+    localStorage.setItem('lc_seen', '1');
+    document.getElementById('welcome-screen').classList.add('on');
+  } else {
+    showApp();
+  }
+}
+
+/* ─── Admin long-press (from quick-open screen) ─── */
+let _lpTimer = null;
+
+function startAdminLongPress(e) {
+  if (e) e.preventDefault(); // prevent iOS context menu / text select
+  _lpTimer = setTimeout(() => {
+    _lpTimer = null;
+    showAdminPinOverlay();
+  }, 600);
+}
+
+function cancelAdminLongPress() {
+  if (_lpTimer) { clearTimeout(_lpTimer); _lpTimer = null; }
+}
+
+function showAdminPinOverlay() {
+  _adminPad.reset();
+  document.getElementById('admin-pin-error').textContent = '';
+  document.getElementById('admin-pin-overlay').classList.add('on');
+}
+
+function hideAdminPinOverlay() {
+  document.getElementById('admin-pin-overlay').classList.remove('on');
+  _adminPad.reset();
+}
+
+/* ═══════════════════════════════════════════════════
+   APP MODES
+   ═══════════════════════════════════════════════════ */
+function enterUserMode() {
+  const isFirst = !localStorage.getItem('lc_seen');
+  if (isFirst) {
+    localStorage.setItem('lc_seen', '1');
+    document.getElementById('welcome-screen').classList.add('on');
+  } else {
+    showApp();
+  }
+}
+function showHome() {
+  document.getElementById('welcome-screen').classList.remove('on');
+  showApp();
+}
+function showApp() {
+  renderList();
+  updateBalanceDisplay();
+  document.getElementById('app').classList.add('on');
+  maybeShowInstallHint();
+}
+async function enterAdminMode() {
+  await loadPendingSuggestions();
+  renderAdmin();
+  document.getElementById('admin-panel').classList.add('on');
+}
+function exitAdmin() {
+  document.getElementById('admin-panel').classList.remove('on');
+  if (localStorage.getItem('lc_unlocked')) {
+    // Device is remembered — return to quick-open screen
+    document.getElementById('quick-open-screen').style.display = 'flex';
+  } else {
+    // Return to PIN screen
+    _userPad.reset();
+    document.getElementById('pin-error').textContent = '';
+    document.getElementById('pin-screen').style.display = '';
+    document.getElementById('pin-screen').classList.remove('out');
+  }
+}
+function adminSwitchToHerView() {
+  document.getElementById('admin-panel').classList.remove('on');
+  showApp();
+}
+
+/* ═══════════════════════════════════════════════════
+   BALANCE DISPLAY
+   ═══════════════════════════════════════════════════ */
+function updateBalanceDisplay() {
+  const k = getKisses();
+  document.getElementById('balance-display').textContent = `💋 ${k} kiss${k !== 1 ? 'es' : ''}`;
+}
+
+/* ═══════════════════════════════════════════════════
+   COUPON TIERS
+   ═══════════════════════════════════════════════════ */
+function couponTier(kisses) {
+  if (kisses <= 10) return 1;
+  if (kisses <= 20) return 2;
+  return 3;
+}
+const TIER_LABELS = { 1: '', 2: '🌟 Premium', 3: '👑 Executive' };
+
+/* ═══════════════════════════════════════════════════
+   COUPON LIST
+   ═══════════════════════════════════════════════════ */
+function renderList() {
+  const kisses = getKisses();
+  const coupons = STATE.coupons;
+
+  let html = coupons.map(c => {
+    const tier = couponTier(c.kisses);
+    const redemptions = getCouponRedemptions(c.id);
+    const count = redemptions.length;
+    const savedInputs = getSavedInputs(c.id);
+    const canAfford = kisses >= c.kisses;
+
+    // countdown badge
+    let countdownHtml = '';
+    (c.inputs || []).forEach(inp => {
+      if (inp.countdown && savedInputs[inp.id]) {
+        const lbl = countdownLabel(daysUntil(savedInputs[inp.id]));
+        if (lbl) countdownHtml = `<span class="countdown-tag ${lbl.cls}">${lbl.text}</span>`;
+      }
+    });
+
+    const isRedeemed = count > 0;
+    const cardClass = isRedeemed ? ' redeemed' : (!canAfford ? ' locked' : '');
+    const pillCls = (!isRedeemed && !canAfford) ? ' cant' : '';
+    const pillTxt = (!isRedeemed && !canAfford)
+      ? `Need ${c.kisses} 💋`
+      : `💋 ${c.kisses} kiss${c.kisses !== 1 ? 'es' : ''}`;
+
+    const redeemedLine = isRedeemed
+      ? `<span class="redeemed-tag">Redeemed · ${redemptions[0].date}</span>`
+      : '';
+    const tierTag = (!isRedeemed && tier > 1)
+      ? `<span class="tier-tag">${TIER_LABELS[tier]}</span>`
+      : '';
+
+    return `
+      <div class="coupon-card${cardClass} tier-${tier}" onclick="openCoupon('${c.id}')">
+        <div class="card-bar"></div>
+        <div class="card-inner">
+          <div class="card-emoji">${c.emoji}</div>
+          <div class="card-body">
+            <div class="card-title">${esc(c.title)}</div>
+            <div class="card-teaser">${esc(c.teaser)}</div>
+            <div class="card-footer">
+              <span class="kiss-pill${pillCls}">${pillTxt}</span>
+              <div class="card-tags">
+                ${redeemedLine}
+                ${!isRedeemed ? (countdownHtml || tierTag) : ''}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  html += `<div class="suggest-wrap">
+    <button class="suggest-btn" onclick="openSuggestForm()">💡 Got a coupon idea? Suggest it →</button>
+  </div>`;
+
+  document.getElementById('coupon-list').innerHTML = html;
+}
+
+/* ═══════════════════════════════════════════════════
+   MODAL
+   ═══════════════════════════════════════════════════ */
+let activeCouponId = null;
+
+function openCoupon(id) {
+  activeCouponId = id;
+  const c = getCoupon(id);
+  const kisses = getKisses();
+  const canAfford = kisses >= c.kisses;
+  const savedInputs = getSavedInputs(id);
+  const redemptions = getCouponRedemptions(id);
+
+  const isRedeemed = redemptions.length > 0;
+  // When redeemed, show the saved selections from that redemption (frozen); otherwise live editable
+  const displayInputs = isRedeemed ? (redemptions[0].inputs || {}) : savedInputs;
+
+  // inputs — frozen when already redeemed
+  let inputsHtml = '';
+  if (c.inputs.length) {
+    inputsHtml = '<div class="section-divider"></div>';
+    c.inputs.forEach(inp => {
+      inputsHtml += `<div class="input-group"><span class="section-label">${inp.label}</span>`;
+      if (inp.type === 'pills') {
+        const saved = displayInputs[inp.id] || [];
+        inputsHtml += `<div class="pill-grid" data-group="${inp.id}" data-max="${inp.max}">`;
+        inp.options.forEach(opt => {
+          inputsHtml += `<div class="pill${saved.includes(opt) ? ' on' : ''}${isRedeemed ? ' frozen' : ''}" ${isRedeemed ? '' : 'onclick="togglePill(this)"'}>${opt}</div>`;
+        });
+        inputsHtml += '</div>';
+      } else if (inp.type === 'toggle') {
+        const on = displayInputs[inp.id] || false;
+        inputsHtml += `<div style="font-size:13px;color:var(--text-muted);margin-bottom:10px;font-weight:300;">${inp.hint}</div>
+          <div class="pill-grid" data-group="${inp.id}" data-max="1">
+            <div class="pill${on ? ' on' : ''}${isRedeemed ? ' frozen' : ''}" data-toggle="true" ${isRedeemed ? '' : 'onclick="togglePill(this)"'}>${inp.label}</div>
+          </div>`;
+      } else if (inp.type === 'date') {
+        const val = displayInputs[inp.id] || '';
+        const today = new Date();
+        today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+        const minDate = today.toISOString().split('T')[0];
+        inputsHtml += `<input type="date" class="field-input${isRedeemed ? ' frozen' : ''}" value="${esc(val)}"
+  min="${minDate}"
+  ${isRedeemed
+    ? 'disabled'
+    : `oninput="saveFieldLive('${inp.id}',this.value)"`}
+>`;
+      } else if (inp.type === 'text') {
+        const val = displayInputs[inp.id] || '';
+        inputsHtml += `<input type="text" class="field-input${isRedeemed ? ' frozen' : ''}" value="${esc(val)}" placeholder="${esc(inp.placeholder||'')}" ${isRedeemed ? 'disabled' : `oninput="saveFieldLive('${inp.id}',this.value)"`}>`;
+      }
+      inputsHtml += '</div>';
+    });
+  }
+
+  // redeem button
+  let redeemHtml;
+  if (isRedeemed) {
+    const r = redemptions[0];
+    const detail = fmtInputSummary(c, r.inputs);
+    redeemHtml = `
+      <button class="redeem-btn already-used">✓ Already Redeemed</button>
+      <div class="redeemed-summary">
+        <div class="redeemed-summary-date">Redeemed on ${r.date}</div>
+        ${detail ? `<div class="redeemed-summary-detail">${esc(detail)}</div>` : ''}
+      </div>
+      <div class="reset-hint" onclick="resetThisCoupon()">· · ·</div>`;
+  } else if (canAfford) {
+    redeemHtml = `<button class="redeem-btn" onclick="startRedeem()">Redeem Coupon</button>`;
+  } else {
+    const need = c.kisses - kisses;
+    redeemHtml = `
+      <button class="redeem-btn cant-afford" onclick="askForKissies(${need})">Ask Andrew for kisses 💌</button>
+      <div class="cant-afford-note">Balance: ${kisses} 💋 — need ${need} more to redeem</div>`;
+  }
+
+  // history (kept empty — single-use shows info inline above)
+  let historyHtml = '';
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-head">
+      <div class="modal-emoji">${c.emoji}</div>
+      <div class="modal-title">${c.title}</div>
+    </div>
+    <div class="modal-kisses">💋 ${c.kisses} kiss${c.kisses!==1?'es':''} to redeem</div>
+    <div class="modal-desc">${c.desc}</div>
+    ${c.note ? `<div class="modal-note">${c.note}</div>` : ''}
+    ${inputsHtml}
+    <div class="section-divider"></div>
+    ${redeemHtml}
+    ${historyHtml}
+  `;
+
+  document.getElementById('overlay').classList.add('on');
+  document.getElementById('modal').classList.add('on');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('modal').classList.remove('on');
+  activeCouponId = null;
+}
+
+async function askForKissies(amount) {
+  if (!confirm(`Ask Andrew for ${amount} kiss${amount !== 1 ? 'es' : ''}?\nHe'll get a Telegram message! 💌`)) return;
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/kiss-notify`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+      },
+      body: JSON.stringify({ type: 'kiss_request', amount })
+    });
+    if (res.ok) {
+      closeModal();
+      alert('Sent! Andrew will see your request 💋');
+    } else {
+      alert('Could not send right now — go give Andrew a real kiss instead!');
+    }
+  } catch {
+    alert('Could not send right now — go give Andrew a real kiss instead!');
+  }
+}
+
+async function resetThisCoupon() {
+  if (!activeCouponId) return;
+  await resetCouponHistory(activeCouponId);
+  closeModal();
+  renderList();
+}
+
+function togglePill(el) {
+  const grid = el.closest('[data-group]');
+  const groupId = grid.dataset.group;
+  const max = parseInt(grid.dataset.max);
+  if (el.dataset.toggle === 'true') {
+    el.classList.toggle('on');
+    saveCouponInput(activeCouponId, groupId, el.classList.contains('on'));
+    return;
+  }
+  if (el.classList.contains('on')) {
+    el.classList.remove('on');
+  } else {
+    if (grid.querySelectorAll('.pill.on').length < max) el.classList.add('on');
+  }
+  saveCouponInput(activeCouponId, groupId,
+    Array.from(grid.querySelectorAll('.pill.on')).map(p => p.textContent.trim()));
+}
+
+function saveFieldLive(inputId, value) {
+  if (!activeCouponId) return;
+  saveCouponInput(activeCouponId, inputId, value);
+  renderList();
+}
+
+/* ═══════════════════════════════════════════════════
+   REDEEM FLOW
+   ═══════════════════════════════════════════════════ */
+function startRedeem() {
+  const c = getCoupon(activeCouponId);
+  const detail = fmtInputSummary(c, getSavedInputs(activeCouponId));
+  document.getElementById('confirm-body').innerHTML =
+    `Give Andrew <strong>${c.kisses} kiss${c.kisses!==1?'es':''}</strong> to redeem<br>"${c.title}".` +
+    (detail ? `<br><br><em style="color:var(--primary)">${esc(detail)}</em>` : '');
+  document.getElementById('confirm').classList.add('on');
+}
+function closeConfirm() { document.getElementById('confirm').classList.remove('on'); }
+
+async function doRedeem() {
+  const c = getCoupon(activeCouponId);
+  await spendKisses(activeCouponId, c.kisses, getSavedInputs(activeCouponId));
+  closeConfirm();
+  closeModal();
+  renderList();
+  updateBalanceDisplay();
+  const k = getKisses();
+  document.getElementById('success-body').textContent = `Enjoy your "${c.title}", Ainu! ♡`;
+  document.getElementById('success-balance').textContent = `Balance: ${k} kiss${k!==1?'es':''} remaining`;
+  document.getElementById('success').classList.add('on');
+  triggerHearts();
+  setTimeout(() => document.getElementById('success').classList.remove('on'), 3000);
+}
+
+/* ═══════════════════════════════════════════════════
+   HEARTS ANIMATION
+   ═══════════════════════════════════════════════════ */
+function triggerHearts() {
+  const canvas = document.getElementById('hearts-canvas');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  const ctx = canvas.getContext('2d');
+
+  const COLORS = [
+    'rgba(255,255,255,0.95)',
+    'rgba(255,210,225,0.90)',
+    'rgba(255,170,195,0.85)',
+    'rgba(255,240,245,0.88)',
+  ];
+  const CHARS = ['♥', '♡', '♥', '♥']; // more filled than outline
+
+  const particles = Array.from({ length: 60 }, () => ({
+    x:        Math.random() * canvas.width,
+    y:        -20 - Math.random() * 180,     // start above screen
+    size:     12 + Math.random() * 22,
+    vy:       1.6 + Math.random() * 2.4,     // fall speed
+    vx:       (Math.random() - 0.5) * 1.2,  // drift
+    swing:    Math.random() * Math.PI * 2,   // horizontal sway phase
+    swingSpd: 0.025 + Math.random() * 0.04,
+    swingAmp: 0.6 + Math.random() * 1.8,
+    alpha:    0.8 + Math.random() * 0.2,
+    color:    COLORS[Math.floor(Math.random() * COLORS.length)],
+    char:     CHARS[Math.floor(Math.random() * CHARS.length)],
+  }));
+
+  const start    = Date.now();
+  const DURATION = 3200; // matches success screen timeout
+
+  function frame() {
+    const elapsed = Date.now() - start;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    let anyVisible = false;
+    particles.forEach(p => {
+      p.y     += p.vy;
+      p.swing += p.swingSpd;
+      p.x     += p.vx + Math.sin(p.swing) * p.swingAmp;
+
+      // fade out in last 30% of duration
+      const fadeFrom = DURATION * 0.7;
+      const alpha = elapsed > fadeFrom
+        ? p.alpha * (1 - (elapsed - fadeFrom) / (DURATION - fadeFrom))
+        : p.alpha;
+
+      if (alpha <= 0.01 || p.y > canvas.height + 30) return;
+      anyVisible = true;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, alpha);
+      ctx.fillStyle   = p.color;
+      ctx.font        = `${p.size}px serif`;
+      ctx.textAlign   = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(p.char, p.x, p.y);
+      ctx.restore();
+    });
+
+    if (anyVisible && elapsed < DURATION + 500) {
+      requestAnimationFrame(frame);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+/* ═══════════════════════════════════════════════════
+   TERMS
+   ═══════════════════════════════════════════════════ */
+function showTC() {
+  document.getElementById('tc-content').innerHTML =
+    TC_ITEMS.map((t,i) => `<div class="tc-item"><div class="tc-num">${i+1}.</div><div class="tc-text">${t}</div></div>`).join('') +
+    `<div class="tc-footer">Effective immediately — valid forever ♡<br>— Management (Andrew Willi)</div>`;
+  document.getElementById('tc-screen').classList.add('on');
+}
+function hideTC() { document.getElementById('tc-screen').classList.remove('on'); }
+
+/* ═══════════════════════════════════════════════════
+   ADMIN PANEL
+   ═══════════════════════════════════════════════════ */
+function renderAdmin() {
+  const kisses    = STATE.kisses || 0;
+  const log       = STATE.log || [];
+  const coupons   = STATE.coupons || [];
+  const suggestions = STATE.suggestions || [];
+
+  /* ── Pending suggestions section ── */
+  let suggestionsHtml = '';
+  if (suggestions.length) {
+    suggestionsHtml = `<div class="admin-section">
+      <div class="admin-section-title">Pending Suggestions (${suggestions.length})</div>
+      ${suggestions.map(s => `
+        <div class="suggestion-card">
+          <div class="suggestion-head">
+            <div class="suggestion-emoji">${esc(s.emoji)}</div>
+            <div class="suggestion-title">${esc(s.title)}</div>
+          </div>
+          ${s.description ? `<div class="suggestion-desc">${esc(s.description)}</div>` : ''}
+          <div class="suggestion-actions">
+            <button class="approve-btn" onclick="approveSuggestion('${s.id}')">✓ Approve &amp; set cost</button>
+            <button class="reject-btn"  onclick="rejectSuggestion('${s.id}')">✗ Reject</button>
+          </div>
+        </div>`).join('')}
+    </div>`;
+  }
+
+  /* ── Coupon rows ── */
+  const couponRows = coupons.map(c => {
+    const redemptions = (STATE.redemptions || {})[c.id] || [];
+    const count = redemptions.length;
+    const lastDate = count ? redemptions[0].date : null;
+    const lastDetail = count ? fmtInputSummary(c, redemptions[0].inputs) : null;
+
+    let adminDateEditor = '';
+    if (count > 0) {
+      const redeemedInputs = redemptions[0].inputs || {};
+      const dateInput = (c.inputs || []).find(inp => inp.type === 'date');
+      if (dateInput) {
+        const val = redeemedInputs[dateInput.id] || '';
+        const today = new Date();
+        today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+        const minDate = today.toISOString().split('T')[0];
+        adminDateEditor = `
+          <div style="margin-top:8px;">
+            <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">Change redeemed date</div>
+            <input type="date" class="field-input" value="${esc(val)}" min="${minDate}"
+              oninput="adminUpdateRedeemedDate('${c.id}', '${dateInput.id}', this.value)">
+          </div>`;
+      }
+    }
+
+    const tier = couponTier(c.kisses);
+    const tierDot = tier === 3 ? ' 👑' : tier === 2 ? ' 🌟' : '';
+
+    return `<div class="admin-coupon">
+      <div class="admin-coupon-head">
+        <div class="admin-coupon-name">${esc(c.emoji)} ${esc(c.title)}${tierDot}</div>
+        <div class="admin-coupon-cost">${c.kisses} 💋</div>
+        <button class="edit-btn" onclick="openCouponEditor('${c.id}')">Edit</button>
+        ${count ? `<button class="reset-btn" onclick="adminReset('${c.id}')">Reset</button>` : ''}
+      </div>
+      <div class="admin-coupon-detail">
+        ${count === 0 ? 'Never redeemed' : `${count}× — last: ${lastDate}${lastDetail ? ' · ' + esc(lastDetail) : ''}`}
+      </div>
+      ${adminDateEditor}
+    </div>`;
+  }).join('');
+
+  /* ── Activity log ── */
+  const logRows = !log.length
+    ? '<div class="log-empty">No activity yet.</div>'
+    : log.slice(0, 40).map(e => {
+        const isCredit = e.type === 'credit';
+        const coupon = e.couponId ? coupons.find(c => c.id === e.couponId) : null;
+        const sign = isCredit
+          ? `<span class="log-sign plus">+${e.amount}</span>`
+          : `<span class="log-sign minus">−${e.amount}</span>`;
+        const desc = isCredit ? (e.note || 'Kisses added') : (coupon ? coupon.title : 'Coupon redeemed');
+        return `<div class="log-item">${sign}
+          <div class="log-detail">
+            <div class="log-desc">${esc(desc)}</div>
+            <div class="log-date">${fmtDate(new Date(e.ts))}</div>
+          </div>
+        </div>`;
+      }).join('');
+
+  document.getElementById('admin-scroll').innerHTML = `
+    <button class="switch-view-btn" onclick="adminSwitchToHerView()">👁 View as Ainu</button>
+
+    ${suggestionsHtml}
+
+    <div class="admin-section">
+      <div class="admin-section-title">Kiss Balance</div>
+      <div class="balance-big">
+        <div class="balance-big-num">💋 ${kisses}</div>
+        <div class="balance-big-label">kiss${kisses!==1?'es':''} available</div>
+      </div>
+      <div class="add-kisses-form">
+        <div class="add-kisses-row">
+          <input type="number" class="num-input" id="admin-amount" placeholder="0" min="1" max="999">
+          <button class="add-btn" onclick="adminAddKisses()">+ Add</button>
+        </div>
+        <input type="text" class="note-input" id="admin-note" placeholder="Note (e.g. Valentine's Day bonus 💋)">
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div class="admin-section-title" style="margin-bottom:0;">Coupons</div>
+      </div>
+      ${couponRows}
+      <button class="new-coupon-btn" onclick="openCouponEditor(null)">+ Add new coupon</button>
+    </div>
+
+    <div class="admin-section">
+      <div class="admin-section-title">Activity Log</div>
+      ${logRows}
+    </div>
+
+    <div style="text-align:center;padding:8px 0 4px;">
+      <span style="font-size:11px;color:var(--text-muted);cursor:pointer;padding:8px;" onclick="exitAdmin()">Lock &amp; exit admin →</span>
+    </div>
+  `;
+}
+
+async function adminAddKisses() {
+  const amount = parseInt(document.getElementById('admin-amount').value);
+  const note = document.getElementById('admin-note').value.trim();
+  if (!amount || amount < 1) { alert('Enter a number of kisses to add.'); return; }
+  await creditKisses(amount, note);
+  renderAdmin();
+}
+
+async function adminReset(couponId) {
+  const c = getCoupon(couponId);
+  if (!confirm(`Reset all redemptions for "${c.title}"?\n\nThis cannot be undone.`)) return;
+  await resetCouponHistory(couponId);
+  renderAdmin();
+}
+async function adminUpdateRedeemedDate(couponId, inputId, value) {
+  const today = new Date();
+  today.setMinutes(today.getMinutes() - today.getTimezoneOffset());
+  const minDate = today.toISOString().split('T')[0];
+  if (value < minDate) value = minDate;
+
+  if (!STATE.redemptions[couponId]?.length) return;
+  if (!STATE.redemptions[couponId][0].inputs) STATE.redemptions[couponId][0].inputs = {};
+  STATE.redemptions[couponId][0].inputs[inputId] = value;
+
+  // Find the most recent DB row for this coupon and patch its inputs JSONB
+  const { data: latest } = await _supabase
+    .from('redemptions')
+    .select('id, inputs')
+    .eq('coupon_id', couponId)
+    .order('ts', { ascending: false })
+    .limit(1)
+    .single();
+  if (latest) {
+    await _supabase.from('redemptions')
+      .update({ inputs: { ...latest.inputs, [inputId]: value } })
+      .eq('id', latest.id);
+  }
+  renderAdmin();
+}
+
+/* ═══════════════════════════════════════════════════
+   COUPON EDITOR (admin)
+   ═══════════════════════════════════════════════════ */
+let _editorCoupon = null;
+let _editorInputs = [];
+
+function openCouponEditor(couponIdOrNull) {
+  const c = getCoupon(couponIdOrNull);
+  _editorCoupon = c;
+  _editorInputs = c ? JSON.parse(JSON.stringify(c.inputs || [])) : [];
+
+  document.getElementById('editor-title').textContent = c ? 'Edit Coupon' : 'New Coupon';
+  document.getElementById('editor-emoji').value   = c?.emoji       || '💋';
+  document.getElementById('editor-name').value    = c?.title       || '';
+  document.getElementById('editor-kisses').value  = c?.kisses      || '';
+  document.getElementById('editor-teaser').value  = c?.teaser      || '';
+  document.getElementById('editor-desc').value    = c?.description || c?.desc || '';
+  document.getElementById('editor-note').value    = c?.note        || '';
+  document.getElementById('editor-delete-btn').style.display = c ? '' : 'none';
+  _renderEditorInputs();
+  document.getElementById('coupon-editor').classList.add('on');
+}
+
+function closeCouponEditor() {
+  document.getElementById('coupon-editor').classList.remove('on');
+  _editorCoupon = null;
+  _editorInputs = [];
+}
+
+function _renderEditorInputs() {
+  const container = document.getElementById('editor-inputs-list');
+  if (!_editorInputs.length) {
+    container.innerHTML = '<div style="font-size:13px;color:var(--text-muted);font-style:italic;padding:4px 0 10px;">No options — coupon will have no input fields.</div>';
+    return;
+  }
+  const TYPE_LABEL = { pills:'🔘 Pill choices', date:'📅 Date picker', toggle:'☑ Toggle', text:'✏ Text field' };
+  container.innerHTML = _editorInputs.map((inp, i) => {
+    let extra = '';
+    if (inp.type === 'pills') {
+      extra = `
+        <div style="margin-top:8px;">
+          <label style="font-size:11px;color:var(--text-muted);">Options (comma-separated)</label>
+          <input class="field-input" style="margin-top:4px;font-size:13px;"
+            value="${esc((inp.options||[]).join(', '))}"
+            oninput="_updateEditorInput(${i},'options',this.value.split(',').map(s=>s.trim()).filter(Boolean))"
+            placeholder="Option A, Option B, …">
+          <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+            <label style="font-size:11px;color:var(--text-muted);white-space:nowrap;">Max picks</label>
+            <input type="number" class="num-input" style="width:70px;padding:7px;font-size:14px;"
+              value="${inp.max||1}" min="1"
+              oninput="_updateEditorInput(${i},'max',+this.value)">
+          </div>
+        </div>`;
+    } else if (inp.type === 'toggle') {
+      extra = `
+        <div style="margin-top:8px;">
+          <label style="font-size:11px;color:var(--text-muted);">Hint text</label>
+          <input class="field-input" style="margin-top:4px;font-size:13px;"
+            value="${esc(inp.hint||'')}"
+            oninput="_updateEditorInput(${i},'hint',this.value)"
+            placeholder="Hint shown below toggle…">
+        </div>`;
+    } else if (inp.type === 'date') {
+      extra = `
+        <div style="margin-top:8px;display:flex;align-items:center;gap:8px;">
+          <input type="checkbox" id="ced-cd-${i}" ${inp.countdown?'checked':''}
+            onchange="_updateEditorInput(${i},'countdown',this.checked)">
+          <label for="ced-cd-${i}" style="font-size:12px;color:var(--text-muted);">Show countdown badge</label>
+        </div>`;
+    } else if (inp.type === 'text') {
+      extra = `
+        <div style="margin-top:8px;">
+          <label style="font-size:11px;color:var(--text-muted);">Placeholder</label>
+          <input class="field-input" style="margin-top:4px;font-size:13px;"
+            value="${esc(inp.placeholder||'')}"
+            oninput="_updateEditorInput(${i},'placeholder',this.value)"
+            placeholder="Placeholder text…">
+        </div>`;
+    }
+    return `<div class="editor-input-row">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <span style="font-size:11px;font-weight:600;color:var(--primary);text-transform:uppercase;letter-spacing:.08em;">${TYPE_LABEL[inp.type]||inp.type}</span>
+        <button onclick="_removeEditorInput(${i})" style="font-size:11px;color:#b05050;background:#f5e8e8;border:none;border-radius:8px;padding:3px 9px;cursor:pointer;">Remove</button>
+      </div>
+      <label style="font-size:11px;color:var(--text-muted);">Label</label>
+      <input class="field-input" style="margin-top:4px;font-size:13px;"
+        value="${esc(inp.label||'')}"
+        oninput="_updateEditorInput(${i},'label',this.value)"
+        placeholder="Label for this input…">
+      ${extra}
+    </div>`;
+  }).join('');
+}
+
+function addEditorInput(type) {
+  const id = type + '_' + Date.now().toString(36);
+  const defaults = {
+    pills:  { type:'pills',  id, label:'', options:[], max:1 },
+    date:   { type:'date',   id, label:'Choose date', countdown:true },
+    toggle: { type:'toggle', id, label:'', hint:'' },
+    text:   { type:'text',   id, label:'', placeholder:'' }
+  };
+  _editorInputs.push(defaults[type]);
+  _renderEditorInputs();
+}
+
+function _removeEditorInput(i) {
+  _editorInputs.splice(i, 1);
+  _renderEditorInputs();
+}
+
+function _updateEditorInput(i, key, value) {
+  _editorInputs[i][key] = value;
+}
+
+async function saveCouponFromEditor() {
+  const emoji       = document.getElementById('editor-emoji').value.trim()  || '💋';
+  const title       = document.getElementById('editor-name').value.trim();
+  const kisses      = parseInt(document.getElementById('editor-kisses').value);
+  const teaser      = document.getElementById('editor-teaser').value.trim();
+  const description = document.getElementById('editor-desc').value.trim();
+  const note        = document.getElementById('editor-note').value.trim();
+
+  if (!title)          { alert('Title is required.'); return; }
+  if (!kisses || kisses < 1) { alert('Kisses cost is required.'); return; }
+
+  const payload = { emoji, title, kisses, teaser, description, note: note || null,
+                    inputs: _editorInputs, status: 'active', suggested_by: 'admin' };
+
+  if (_editorCoupon) {
+    await _supabase.from('coupons').update(payload).eq('id', _editorCoupon.id);
+    const idx = STATE.coupons.findIndex(c => c.id === _editorCoupon.id);
+    if (idx >= 0) STATE.coupons[idx] = _mapCoupon({ ..._editorCoupon, ...payload });
+  } else {
+    const id = title.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'')
+               + '_' + Date.now().toString(36);
+    const { data: created, error } = await _supabase.from('coupons')
+      .insert({ id, ...payload }).select().single();
+    if (error) { alert('Error saving coupon: ' + error.message); return; }
+    if (created) STATE.coupons.push(_mapCoupon(created));
+  }
+
+  closeCouponEditor();
+  renderAdmin();
+}
+
+async function deleteCouponFromEditor() {
+  if (!_editorCoupon) return;
+  if (!confirm(`Delete "${_editorCoupon.title}"?\n\nThis cannot be undone.`)) return;
+  await _supabase.from('coupons').delete().eq('id', _editorCoupon.id);
+  STATE.coupons = STATE.coupons.filter(c => c.id !== _editorCoupon.id);
+  closeCouponEditor();
+  renderAdmin();
+}
+
+/* ─── Suggestion approval / rejection ── */
+async function approveSuggestion(id) {
+  const sug = STATE.suggestions.find(s => s.id === id);
+  if (!sug) return;
+  const input = prompt(`Approve "${sug.title}" — how many kisses should it cost?`);
+  const kisses = parseInt(input);
+  if (!kisses || kisses < 1) return;
+  await _supabase.from('coupons')
+    .update({ status: 'active', kisses }).eq('id', id);
+  STATE.suggestions = STATE.suggestions.filter(s => s.id !== id);
+  const { data: fresh } = await _supabase.from('coupons')
+    .select('*').eq('status','active').order('kisses');
+  STATE.coupons = (fresh || []).map(_mapCoupon);
+  renderAdmin();
+}
+
+async function rejectSuggestion(id) {
+  const sug = STATE.suggestions.find(s => s.id === id);
+  if (!sug) return;
+  if (!confirm(`Reject "${sug.title}"?`)) return;
+  await _supabase.from('coupons').update({ status: 'rejected' }).eq('id', id);
+  STATE.suggestions = STATE.suggestions.filter(s => s.id !== id);
+  renderAdmin();
+}
+
+/* ═══════════════════════════════════════════════════
+   USER SUGGEST FORM
+   ═══════════════════════════════════════════════════ */
+function openSuggestForm() {
+  document.getElementById('suggest-emoji').value = '💋';
+  document.getElementById('suggest-title').value = '';
+  document.getElementById('suggest-desc').value  = '';
+  document.getElementById('suggest-overlay').classList.add('on');
+  document.getElementById('suggest-modal').classList.add('on');
+}
+
+function closeSuggestForm() {
+  document.getElementById('suggest-overlay').classList.remove('on');
+  document.getElementById('suggest-modal').classList.remove('on');
+}
+
+async function submitSuggestion() {
+  const emoji = document.getElementById('suggest-emoji').value.trim() || '💋';
+  const title = document.getElementById('suggest-title').value.trim();
+  const desc  = document.getElementById('suggest-desc').value.trim();
+  if (!title) { alert('Please give your idea a title!'); return; }
+  const id = 'suggest_' + Date.now().toString(36);
+  const { error } = await _supabase.from('coupons').insert({
+    id, emoji, title, description: desc, teaser: desc.slice(0,80),
+    kisses: 0, inputs: [], status: 'pending', suggested_by: 'user'
+  });
+  if (error) { alert('Could not send — try again!'); return; }
+  closeSuggestForm();
+  alert('Your idea has been sent to Andrew! 💌');
+}
+
+/* ═══════════════════════════════════════════════════
+   MODAL SWIPE-DOWN
+   ═══════════════════════════════════════════════════ */
+(function () {
+  const modal = document.getElementById('modal');
+  let startY = 0, bodyTop = 0;
+  modal.addEventListener('touchstart', e => {
+    startY = e.touches[0].clientY;
+    bodyTop = modal.querySelector('.modal-body').scrollTop;
+  }, { passive: true });
+  modal.addEventListener('touchend', e => {
+    if (e.changedTouches[0].clientY - startY > 90 && bodyTop <= 0) closeModal();
+  }, { passive: true });
+})();
+
+/* ═══════════════════════════════════════════════════
+   INSTALL HINT
+   ═══════════════════════════════════════════════════ */
+function maybeShowInstallHint() {
+  const standalone = window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches;
+  if (!standalone && !localStorage.getItem('lc_hint'))
+    setTimeout(() => document.getElementById('install-hint').classList.add('on'), 1400);
+}
+function dismissHint() {
+  localStorage.setItem('lc_hint', '1');
+  document.getElementById('install-hint').classList.remove('on');
+}
+
+/* ═══════════════════════════════════════════════════
+   PWA MANIFEST
+   ═══════════════════════════════════════════════════ */
+(function () {
+  try {
+    const l = document.createElement('link'); l.rel = 'manifest';
+    l.href = URL.createObjectURL(new Blob([JSON.stringify({
+      name: 'Love Coupons for Ainu', short_name: 'Love Coupons',
+      start_url: './', display: 'standalone',
+      background_color: '#2a5955', theme_color: '#2a5955', orientation: 'portrait',
+      icons: [{ src: 'icon-180.png', sizes: '180x180', type: 'image/png' },
+              { src: 'icon.png',     sizes: '1024x1024', type: 'image/png' }]
+    })], { type: 'application/json' }));
+    document.head.appendChild(l);
+  } catch(e) {}
+})();
+
+/* ═══════════════════════════════════════════════════
+   INIT — load from Supabase, then show right screen
+   ═══════════════════════════════════════════════════ */
+(async () => {
+  const loading = document.getElementById('loading');
+  loading.style.display = 'flex';
+  try {
+    await loadFromSupabase();
+  } catch (e) {
+    console.error('Supabase load failed:', e);
+  }
+  loading.style.display = 'none';
+  renderList();
+
+  if (localStorage.getItem('lc_unlocked')) {
+    // Device already trusted — skip PIN, show quick-open
+    document.getElementById('pin-screen').style.display = 'none';
+    document.getElementById('quick-open-screen').style.display = 'flex';
+  }
+  // else: pin-screen is visible by default (no change needed)
+})();
+</script>
+</body>
+</html>
